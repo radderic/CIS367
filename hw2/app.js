@@ -14,6 +14,7 @@ let blue_eyel, blue_eyer;
 let blue_irisl, blue_irisr;
 let pink_eyel, pink_eyer;
 let pink_irisl, pink_irisr;
+let cherry;
 
 let oneColorShader = null;
 let multiColorShader = null;
@@ -76,7 +77,7 @@ function renderFunc() {
     oneColorShader.uniforms.pixelColor = [1.0, 1.0, 1.0]; // 70% green
     blue_eyel.draw(gl.TRIANGLE_FAN);
     blue_eyel.unbind();
- 
+
   }
 
   if (multiColorShader) {
@@ -87,6 +88,10 @@ function renderFunc() {
     blue_ghost.bind(multiColorShader);
     blue_ghost.draw(gl.TRIANGLE_STRIP);
     blue_ghost.unbind();
+
+    cherry.bind(multiColorShader);
+    cherry.draw(gl.TRIANGLES);
+    cherry.unbind();
   }
 }
 
@@ -191,14 +196,26 @@ wall = createGeometry(gl).attr(
 
 
 food = createGeometry(gl).attr(
-  'vertexPosiition',
+  'vertexPosition',
   [
     [-0.8, 0.45, 0.0],
     [-0.4, 0.45, 0.0],
-    [0.0, 0.45, 0.0],
     [0.4, 0.45, 0.0],
     [0.8, 0.45, 0.0],
   ], { size: 3});
+
+cherry = createGeometry(gl).attr(
+  'vertexPos',
+  [
+    [ 0.1, 0.5, 0.0 ],
+    [ -0.1, 0.5, 0.0 ],
+    [ 0.0, 0.3, 0.0 ],
+  ], {size : 3}
+).attr('vertexCol', [
+    [ 1.0, 0.0, 0.0 ],
+    [ 1.0, 0.0, 0.0 ],
+    [ 1.0, 0.0, 0.0 ],
+], {size:3});
 
 function generatePacmanVertices(ctrx, ctry, numPoints) {
   let startx = .3;
