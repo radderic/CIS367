@@ -19,29 +19,56 @@
   </head>
 
   <body>
-    <h1>Projection &amp; Viewing</h1>
+    <h1>Planets and stuff</h1>
+    <h2>Eric Darr</h2>
+    <h3>Approx hours: big number</h3>
     <div>
       <div id="control">
         <label for="cameraRoll">Camera roll angle</label>
         <input type="range" min="-45" max="45" id="cameraRoll" />
         <label for="cameraZ">Camera Forward/Backward</label>
-        <input type="range" min="-20" max="30" step="0.2" id="cameraZ" />
+        <input type="range" min="-20" max="80" step="0.2" id="cameraZ" />
         <span>Projection: </span>
         <select id="projectionType">
           <option value="perspective">Perspective</option>
           <option value="orthotop">Orthographic Top</option>
-          <option value="orthofront">Orthographic Front (TODO)</option>
-          <option value="orthoside">Orthographic Side (TODO)</option>
+          <option value="orthofront">Orthographic Front</option>
+          <option value="orthoside">Orthographic Side</option>
         </select>
-        <span>Focus planet: </span>
+<!--        <span>Focus planet: </span>
         <select id="planet">
           <option value="none">None</option>
           <option value="mercury">Mercury</option>
           <option value="venus">Venus</option>
           <option value="earth">Earth</option>
         </select>
+-->
       </div>
     </div>
     <canvas id="mycanvas"></canvas>
-  </body>
+    <h2>Description</h2>
+    <p style="white-space: pre;">
+    I attempted to make a solar system of some sorts. Initially I created a rocket model
+    followed by a satellite model. Once I completed the sphere object I used it for planets.
+    In my sketch I used mostly ratios because nothing in my actual scene is proper size/scale.
+    For artistic sake I made things relatively similar in size but try to create a recognizable
+    scence which one could easily understand and visually find appealing.
+
+    The sun is basically the origin and it spins on it's own Z-axis. I have 3 planets that orbit,
+    Mercury, Venus, and Earth with moon. Mercury, Venus and Earth just orbit the origin too after
+    translation of a sufficient amount. The moon orbits the Earth which in a sense would be orbiting the
+    origin but I translate it to match the Earths current object coordinate frame.
+
+    When the scene is first loaded a rocket is slowly heading towards the camera then stops.
+    The satellite starts slightly off to the side and slowly moves but also stops just to make the scene
+    seem whole as the planets continue to move in the background.
+    <p>
+
+    <h2>Satellite Sketch</h2>
+    <img src="./satellite_sketch.png">
+
+    <h2>Rocket Sketch</h2>
+    <img src="./rocket_sketch.png">
+
+ </body>
 </html>

@@ -11,7 +11,7 @@ export default class Rocket extends ObjectGroup {
 
         let bodyGeom = new Polygonal({
             topRadius: 0.15,
-            bottomRadius: 0.15,
+            bottomRadius: 0.25,
             height: 1.2,
             numberOfSlices: N
         });
@@ -45,7 +45,7 @@ export default class Rocket extends ObjectGroup {
         const eng1 = new GLGeometry(glContext)
           .attr(positionAttribute, eng1Geom.geometry())
           .attr(colorAttribute, eng1Colors);
-        const eng1CF = mat4.fromTranslation(mat4.create(), [0.0, 0.2, -0.2]);
+        const eng1CF = mat4.fromTranslation(mat4.create(), [0.0, 0.25, -0.2]);
         this.add({ object: eng1, frame: eng1CF });
 
         //engine2
@@ -60,7 +60,7 @@ export default class Rocket extends ObjectGroup {
         const eng2 = new GLGeometry(glContext)
           .attr(positionAttribute, eng2Geom.geometry())
           .attr(colorAttribute, eng2Colors);
-        const eng2CF = mat4.fromTranslation(mat4.create(), [0.0, -0.2, -0.2]);
+        const eng2CF = mat4.fromTranslation(mat4.create(), [0.0, -0.25, -0.2]);
         this.add({ object: eng2, frame: eng2CF });
 
         //engine3
@@ -75,7 +75,7 @@ export default class Rocket extends ObjectGroup {
         const eng3 = new GLGeometry(glContext)
           .attr(positionAttribute, eng3Geom.geometry())
           .attr(colorAttribute, eng3Colors);
-        const eng3CF = mat4.fromTranslation(mat4.create(), [0.2, 0.0, -0.2]);
+        const eng3CF = mat4.fromTranslation(mat4.create(), [0.25, 0.0, -0.2]);
         this.add({ object: eng3, frame: eng3CF });
 
         let eng4Geom = new Polygonal({
@@ -89,7 +89,7 @@ export default class Rocket extends ObjectGroup {
         const eng4 = new GLGeometry(glContext)
           .attr(positionAttribute, eng4Geom.geometry())
           .attr(colorAttribute, eng4Colors);
-        const eng4CF = mat4.fromTranslation(mat4.create(), [-0.2, 0.0, -0.2]);
+        const eng4CF = mat4.fromTranslation(mat4.create(), [-0.25, 0.0, -0.2]);
         this.add({ object: eng4, frame: eng4CF });
     }
 }

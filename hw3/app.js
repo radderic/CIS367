@@ -9,10 +9,12 @@ import fsMulti from './shaders/fs_vertexcolor.glsl';
 import Cone from './geometry/Cone';
 import Polygonal from './geometry/Polygonal';
 import Tetrahedron from './geometry/Tetrahedron';
+import Rectangle from './geometry/Rectangle';
 import Sphere from './geometry/Sphere';
 import Arrow from './model/Arrow';
 import Axes from './model/Axes';
 import Rocket from './model/Rocket';
+import Satellite from './model/Satellite';
 
 const POINTS_ON_CIRCLE = 30;
 const IDENTITY = mat4.create();
@@ -23,7 +25,7 @@ const GAZE_POINT = [0, 0, 0.3];
 const CAMERA_UP = [0, 0, 1];
 
 let canvas, gl;
-let cone, tube, axes; // geometric objects
+let axes; // geometric objects
 let oneColorShader = null;
 let multiColorShader = null;
 let projectionMatrix, viewMatrix;
@@ -40,6 +42,9 @@ let earthRev, moonRev, mercuryRev, venusRev;
 let earthSpin, sunSpin, moonSpin, mercurySpin, venusSpin;
 let moonTrans;
 let rocket, rocketCF;
+let sata, sataCF, sataSpin;
+let rocketCount, sataCount;
+
 
 // Inject this render() function into the GLGeometry class
 const renderMixin = {
@@ -69,16 +74,10 @@ function renderFunc() {
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
     // Post-multiply: rotate around its own Z-axis
-//    mat4.multiply(coneCF, coneCF, coneSpin);
     // Pre-multiply: rotate arount the world Z-axis
-//    mat4.multiply(coneCF, coneRevolution, coneCF);
     //
     if(selectedView === 'mercury') {
-        let eyeTrans = mat4.create();
-        mat4.clone(eyeTrans, mercuryCF);
-//        mat4.translate(eyeTrans, eyeTrans, [0.5, 1.0, 1.0]);
-        mat4.lookAt(viewMatrix, mercuryCF, [0,0,0], CAMERA_UP);
-        //mat4.lookAt(viewMatrix, EYE_POSITION, GAZE_POINT, CAMERA_UP);
+        //do stuff here
     }
 
     //Earth orbiting
@@ -146,12 +145,22 @@ function renderFunc() {
         [0, 0, 1]
     );
     mat4.multiply(sunCF, sunCF, sunSpin);
-//    sun.render(multiColorShader, sunCF);
+    sun.render(multiColorShader, sunCF);
 
     axes.render(myObjectRenderer, IDENTITY);
-    
-    mat4.translate(rocketCF, rocketCF, [0.0, 0.0, 0.1]);
+
+    if(rocketCount < 1025) {
+        mat4.translate(rocketCF, rocketCF, [0.0, 0.0, 0.1]);
+    }
+    rocketCount++;
+
+    if(sataCount < 1000) {
+        mat4.translate(sataCF, sataCF, [-0.005, -0.003, 0.0]);
+    }
+    sataCount++;
+
     rocket.render(myObjectRenderer, rocketCF);
+    sata.render(myObjectRenderer, sataCF);
 }
 
 function onWindowResized() {
@@ -224,20 +233,16 @@ function planet(ev) {
     const type = ev.target.value;
     switch (type) {
         case 'mercury':
+            console.log(mercuryCF);
             selectedView = 'mercury';
             break;
         case 'venus':
-            mat4.lookAt(viewMatrix, [1,0,0], [0,0,0], [0,0,1]);
             break;
         case 'earth':
-            mat4.lookAt(viewMatrix, [0,1,0], [0,0,0], [0,0,1]);
             break;
         case 'none':
-            mat4.lookAt(viewMatrix, EYE_POSITION, GAZE_POINT, CAMERA_UP);
     }
 }
-
-
 
 // JavaScript does not have main(). We just make it up.
 // This function is actually called from index.js
@@ -273,14 +278,19 @@ export default function main() {
     venusSpin = mat4.create();
 
     rocketCF = mat4.create();
-    mat4.rotate(rocketCF, rocketCF, glMatrix.toRadian(45.3), [0,0,1]);
+    mat4.rotate(rocketCF, rocketCF, glMatrix.toRadian(45.8), [0,0,1]);
     mat4.rotate(rocketCF, rocketCF, glMatrix.toRadian(47), [0,1,0]);
+    rocketCount = 0;
+    sataCount = 0;
 
     // Use perspective projection with 90-degree field-of-view
     // screen aspect ratio 4:3, near plane at z=0.1 far-plane at z=20
     mat4.perspective(projectionMatrix, glMatrix.toRadian(45), 4 / 3, 0.1, null);
     mat4.lookAt(viewMatrix, EYE_POSITION, GAZE_POINT, CAMERA_UP);
     mat4.invert(cameraCF, viewMatrix);
+
+    sataCF = mat4.fromTranslation(mat4.create(), [56, 50, 65]);
+    sataSpin = mat4.create();
 
     // Setup event listeners
     window.addEventListener('resize', onWindowResized);
@@ -293,9 +303,9 @@ export default function main() {
     document
         .getElementById('projectionType')
         .addEventListener('change', onProjectionTypeChanged);
-    document
-        .getElementById('planet')
-        .addEventListener('change', planet);
+//    document
+//        .getElementById('planet')
+//        .addEventListener('change', planet);
     onWindowResized(); // call it once to force a manual resize
 
     gl.clearColor(0.0, 0.0, 0.0, 1); // Use black to clear the canvas
@@ -351,7 +361,7 @@ export default function main() {
 
 
     const sunShape = new Sphere({
-        radius: 10.0,
+        radius: 8.0,
         subdivisions: 5
     });
 
@@ -432,6 +442,11 @@ export default function main() {
         colorAttribute: 'vertexCol'
     });
 
+    sata = new Satellite({
+        glContext: gl,
+        positionAttribute: 'vertexPos',
+        colorAttribute: 'vertexCol'
+    });
 
     multiColorShader = createShader(
         gl,
