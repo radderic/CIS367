@@ -21,7 +21,9 @@ export default class Sphere extends GeometricObject {
         split(0, 0, 3, 1);
         split(0, 1, 3, 2);
         this.vertices = vertices;
+        vertices = [[1,1,1], [-1,-1,1], [1,-1,-1], [-1,1,-1]];
         this.triangles = triangles;
+        triangles = [];
     }
 }
 

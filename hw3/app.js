@@ -12,34 +12,34 @@ import Tetrahedron from './geometry/Tetrahedron';
 import Sphere from './geometry/Sphere';
 import Arrow from './model/Arrow';
 import Axes from './model/Axes';
+import Rocket from './model/Rocket';
 
 const POINTS_ON_CIRCLE = 30;
 const IDENTITY = mat4.create();
 
-const EYE_POSITION = [2, 2, 3];
+const EYE_POSITION = [56, 56, 72];
+//const EYE_POSITION = [4, 4, 6];
 const GAZE_POINT = [0, 0, 0.3];
 const CAMERA_UP = [0, 0, 1];
 
-// Desired speed of animation
-const CONE_SPIN_SPEED = 60.0; // degrees per second
-const CONE_REVOLUTION_SPEED = 30.0; // degrees per second
-const HEXAGON_SPIN_SPEED = 180.0;
 let canvas, gl;
 let cone, tube, axes; // geometric objects
 let oneColorShader = null;
 let multiColorShader = null;
 let projectionMatrix, viewMatrix;
+let selectedView;
 let cameraCF, coneCF, tubeCF;
 let lastRenderTime = 0;
 let cameraRollAngle = 0,
     cameraDistance = 0;
 let coneRevolution, coneSpin, hexaSpin;
-let tetra, tetraCF;
 let camRev;
-let earthCF, sunCF, moonCF;
-let earth, sun, moon;
-let earthRev, sunRev, moonRev;
-let earthSpin, sunSpin, moonSpin;
+let earthCF, sunCF, moonCF, mercuryCF, venusCF;
+let earth, sun, moon, mercury, venus;
+let earthRev, moonRev, mercuryRev, venusRev;
+let earthSpin, sunSpin, moonSpin, mercurySpin, venusSpin;
+let moonTrans;
+let rocket, rocketCF;
 
 // Inject this render() function into the GLGeometry class
 const renderMixin = {
@@ -68,66 +68,90 @@ function renderFunc() {
 
     gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-    // By calculating angle from speed, you will experience
-    // consistent animation outcome regardless of the actual hardware speed
-    // On slower hardware deltaTime will hold a larger value
-    // On faster hardware deltaTime will hold a smaller value
-//    mat4.fromRotation(
-//        coneSpin,
-//        glMatrix.toRadian((deltaTime * CONE_SPIN_SPEED) / 1000),
-//        [0, 0, 1]
-//    );
-//    mat4.fromRotation(
-//        coneRevolution,
-//        glMatrix.toRadian((deltaTime * CONE_REVOLUTION_SPEED) / 1000),
-//        [0, 0, 1]
-//    );
-
-//    mat4.fromRotation(
-//        camRev,
-//        glMatrix.toRadian((deltaTime * 20.0) / 1000),
-//        [0, 0, 1]
-//    );
-//    mat4.multiply(cameraCF, camRev, cameraCF);
-//    mat4.invert(viewMatrix, cameraCF);
-
-//    moonCF = earthCF;
-//    moonCF = mat4.fromTranslation(moonCF, [0, 1.0, 0]);
-
     // Post-multiply: rotate around its own Z-axis
 //    mat4.multiply(coneCF, coneCF, coneSpin);
     // Pre-multiply: rotate arount the world Z-axis
 //    mat4.multiply(coneCF, coneRevolution, coneCF);
+    //
+    if(selectedView === 'mercury') {
+        let eyeTrans = mat4.create();
+        mat4.clone(eyeTrans, mercuryCF);
+//        mat4.translate(eyeTrans, eyeTrans, [0.5, 1.0, 1.0]);
+        mat4.lookAt(viewMatrix, mercuryCF, [0,0,0], CAMERA_UP);
+        //mat4.lookAt(viewMatrix, EYE_POSITION, GAZE_POINT, CAMERA_UP);
+    }
 
-//    mat4.fromRotation(
-//        earthRev,
-//        glMatrix.toRadian((deltaTime * 20.0) / 1000),
-//        [0, 0, 1]
-//    );
-//    mat4.multiply(earthCF, earthRev, earthCF);
-//    mat4.copy(moonCF, earthCF);
-
-//    mat4.copy(moonCF, earthCF);
+    //Earth orbiting
     mat4.fromRotation(
-        moonRev,
-        glMatrix.toRadian((deltaTime * 20.0) / 1000),
+        earthRev,
+        glMatrix.toRadian((deltaTime * 10.0) / 1000),
         [0, 0, 1]
     );
-
-    mat4.multiply(moonCF, moonRev, moonCF);
-    //mat4.fromTranslation(moonCF, [0.0, 1.0, 0.0]);
+    mat4.multiply(earthCF, earthRev, earthCF);
 
     mat4.fromRotation(
         earthSpin,
-        glMatrix.toRadian((deltaTime * 30.0) / 1000),
+        glMatrix.toRadian((deltaTime * -50.0) / 1000),
         [0, 0, 1]
     );
-//    mat4.multiply(earthCF, earthCF, earthSpin);
-//    earth.render(multiColorShader, earthCF);
+    mat4.multiply(earthCF, earthCF, earthSpin);
+    earth.render(multiColorShader, earthCF);
 
-    moon.render(multiColorShader, moonCF);
+    mat4.fromRotation(
+        mercuryRev,
+        glMatrix.toRadian((deltaTime * 16.0) / 1000),
+        [0, 0, 1]
+    );
+    mat4.multiply(mercuryCF, mercuryRev, mercuryCF);
+
+    mat4.fromRotation(
+        mercurySpin,
+        glMatrix.toRadian((deltaTime * -50.0) / 1000),
+        [0, 0, 1]
+    );
+    mat4.multiply(mercuryCF, mercuryCF, mercurySpin);
+    mercury.render(multiColorShader, mercuryCF);
+
+    mat4.fromRotation(
+        venusRev,
+        glMatrix.toRadian((deltaTime * 20.0) / 1000),
+        [0, 0, 1]
+    );
+    mat4.multiply(venusCF, venusRev, venusCF);
+
+    mat4.fromRotation(
+        venusSpin,
+        glMatrix.toRadian((deltaTime * -50.0) / 1000),
+        [0, 0, 1]
+    );
+    mat4.multiply(venusCF, venusCF, venusSpin);
+    venus.render(multiColorShader, venusCF);
+
+    /* make moon orbit around the origin */
+    //calculate moon orbit
+    mat4.fromRotation(moonRev, glMatrix.toRadian((deltaTime * 180.0) / 1000), [0, 0, 1]);
+    //apply rotation/orbit to moonCF
+    mat4.multiply(moonCF, moonRev, moonCF);
+
+    /* Translate the moon and it's rotation to match the earthCF position */
+    //copy earthCF for moon
+    mat4.copy(moonTrans, earthCF);
+    mat4.multiply(moonTrans, moonTrans, moonCF);
+    moon.render(multiColorShader, moonTrans);
+
+
+    mat4.fromRotation(
+        sunSpin,
+        glMatrix.toRadian((deltaTime * -30.0) / 1000),
+        [0, 0, 1]
+    );
+    mat4.multiply(sunCF, sunCF, sunSpin);
+//    sun.render(multiColorShader, sunCF);
 
     axes.render(myObjectRenderer, IDENTITY);
+    
+    mat4.translate(rocketCF, rocketCF, [0.0, 0.0, 0.1]);
+    rocket.render(myObjectRenderer, rocketCF);
 }
 
 function onWindowResized() {
@@ -191,10 +215,29 @@ function onProjectionTypeChanged(ev) {
             mat4.lookAt(viewMatrix, [0,1,0], [0,0,0], [0,0,1]);
             break;
         case 'perspective':
-            mat4.perspective(projectionMatrix, glMatrix.toRadian(45), 4 / 3, 0.1, 6);
+            mat4.perspective(projectionMatrix, glMatrix.toRadian(45), 4 / 3, 0.4, null);
             mat4.lookAt(viewMatrix, EYE_POSITION, GAZE_POINT, CAMERA_UP);
     }
 }
+
+function planet(ev) {
+    const type = ev.target.value;
+    switch (type) {
+        case 'mercury':
+            selectedView = 'mercury';
+            break;
+        case 'venus':
+            mat4.lookAt(viewMatrix, [1,0,0], [0,0,0], [0,0,1]);
+            break;
+        case 'earth':
+            mat4.lookAt(viewMatrix, [0,1,0], [0,0,0], [0,0,1]);
+            break;
+        case 'none':
+            mat4.lookAt(viewMatrix, EYE_POSITION, GAZE_POINT, CAMERA_UP);
+    }
+}
+
+
 
 // JavaScript does not have main(). We just make it up.
 // This function is actually called from index.js
@@ -208,24 +251,34 @@ export default function main() {
     coneCF = mat4.fromTranslation(mat4.create(), [0, 1.0, 0]);
     coneRevolution = mat4.create();
     camRev = mat4.create();
-    coneSpin = mat4.create();
-    hexaSpin = mat4.create();
-    tubeCF = mat4.fromTranslation(mat4.create(), [0.2, 0.5, 0]);
-    tetraCF = mat4.create();
-    earthCF = mat4.fromTranslation(mat4.create(), [0, 1.5, 0]);
+
+    earthCF = mat4.fromTranslation(mat4.create(), [0, 40, 0]);
     earthRev = mat4.create();
     earthSpin = mat4.create();
+
     sunCF = mat4.create();
+    sunSpin = mat4.create();
+
     moonCF = mat4.create();
-    mat4.fromTranslation(moonCF, [0, 1.5, 0]);
-//    mat4.copy(moonCF, earthCF);
+    moonTrans = mat4.create();
+    mat4.translate(moonCF, moonCF, [0, 3.0, 0]);
     moonRev = mat4.create();
-//    moonCF = mat4.fromTranslation([0, 0.3, 0], moonCF);
-    mat4.scale(tetraCF, tetraCF, [0.5,0.5,0.5]);
+
+    mercuryCF = mat4.fromTranslation(mat4.create(), [0, 20, 0]);
+    mercuryRev = mat4.create();
+    mercurySpin = mat4.create();
+
+    venusCF = mat4.fromTranslation(mat4.create(), [0, 30, 0]);
+    venusRev = mat4.create();
+    venusSpin = mat4.create();
+
+    rocketCF = mat4.create();
+    mat4.rotate(rocketCF, rocketCF, glMatrix.toRadian(45.3), [0,0,1]);
+    mat4.rotate(rocketCF, rocketCF, glMatrix.toRadian(47), [0,1,0]);
 
     // Use perspective projection with 90-degree field-of-view
     // screen aspect ratio 4:3, near plane at z=0.1 far-plane at z=20
-    mat4.perspective(projectionMatrix, glMatrix.toRadian(45), 4 / 3, 0.1, 6);
+    mat4.perspective(projectionMatrix, glMatrix.toRadian(45), 4 / 3, 0.1, null);
     mat4.lookAt(viewMatrix, EYE_POSITION, GAZE_POINT, CAMERA_UP);
     mat4.invert(cameraCF, viewMatrix);
 
@@ -240,42 +293,38 @@ export default function main() {
     document
         .getElementById('projectionType')
         .addEventListener('change', onProjectionTypeChanged);
+    document
+        .getElementById('planet')
+        .addEventListener('change', planet);
     onWindowResized(); // call it once to force a manual resize
 
     gl.clearColor(0.0, 0.0, 0.0, 1); // Use black to clear the canvas
 
     gl.enable(gl.DEPTH_TEST); // Use DEPTH buffer for hidden surface removal
 
-    // Define our 3D objects here
-    const coneShape = new Cone({
-        radius: 0.3,
-        height: 1.0,
-        numberOfSlices: POINTS_ON_CIRCLE
+    const moonShape = new Sphere({
+        radius: 0.2,
+        subdivisions: 5
     });
 
-    let coneColors = [];
-    for (let k = 0; k < POINTS_ON_CIRCLE; k++) {
-        coneColors.push(k % 2, 1, 0); // Perimeter color is YELLOW/GREEN
-    }
-    coneColors.push(0, 0, 1); // Center at base is BLUE
-    coneColors.push(1, 0, 0); // Cone top is RED
-
-    cone = new GLGeometry(gl)
-        .attr('vertexPos', coneShape.geometry(), { size: 3 })
-        .attr('vertexCol', coneColors, { size: 3 });
-
-    const tetraShape = new Tetrahedron({
-        side_length: 1
-    });
-
-    let tetraColors = [];
-    for(let k = 0; k < 4; k++) {
-        tetraColors.push(1,0,0);
+    let moonColors = [];
+    for(let k = 0; k < moonShape.vertices.length; k++) {
+        let r = Math.floor(Math.random() * 100)
+        if(r < 60) {
+            moonColors.push([0.7,0.7,0.7]);
+        }
+        else if(r >= 60 && r < 85) {
+            moonColors.push([0.5,0.5,0.5]);
+        }
+        else {
+            moonColors.push([0.3,0.3,0.3]);
+        }
     }
 
-    tetra = new GLGeometry(gl)
-        .attr('vertexPos', tetraShape.geometry(), { size: 3})
-        .attr('vertexCol', tetraColors, { size: 3 });
+    moon = new GLGeometry(gl)
+        .attr('vertexPos', moonShape.geometry(), { size: 3})
+        .attr('vertexCol', moonColors, { size: 3 });
+
 
     const earthShape = new Sphere({
         radius: 0.5,
@@ -300,54 +349,89 @@ export default function main() {
         .attr('vertexPos', earthShape.geometry(), { size: 3})
         .attr('vertexCol', earthColors, { size: 3 });
 
-    const moonShape = new Sphere({
-        radius: 0.2,
+
+    const sunShape = new Sphere({
+        radius: 10.0,
         subdivisions: 5
     });
 
-    let moonColors = [];
-    for(let k = 0; k < earthShape.vertices.length; k++) {
+    let sunColors = [];
+    for(let k = 0; k < sunShape.vertices.length; k++) {
         let r = Math.floor(Math.random() * 100)
-        if(r < 60) {
-            moonColors.push([0.7,0.7,0.7]);
+        if(r < 50) {
+            sunColors.push([1,1,0]);
         }
-        else if(r >= 60 && r < 85) {
-            moonColors.push([0.5,0.5,0.5]);
+        else if(r >= 50 && r < 85) {
+            sunColors.push([1,0.5,0]);
         }
         else {
-            moonColors.push([0.3,0.3,0.3]);
+            sunColors.push([1,0,0]);
         }
     }
 
-    moon = new GLGeometry(gl)
-        .attr('vertexPos', moonShape.geometry(), { size: 3})
-        .attr('vertexCol', moonColors, { size: 3 });
+    sun = new GLGeometry(gl)
+        .attr('vertexPos', sunShape.geometry(), { size: 3})
+        .attr('vertexCol', sunColors, { size: 3 });
 
-    const HEXA_SIDE = 6;
-    const cylShape = new Polygonal({
-        numberOfSlices: HEXA_SIDE,
-        topRadius: 0.1,
-        bottomRadius: 0.15,
-        height: 0.5
+
+    const mercuryShape = new Sphere({
+        radius: 0.25,
+        subdivisions: 5
     });
-    let cylColors = [];
-    // green-white for base circle
-    for (let k = 0; k < HEXA_SIDE; k++)
-        cylColors.push([(k + 1) % 2, (k + 0) % 2, (k + 1) % 2]);
-    // green-black for top circle
-    for (let k = 0; k < HEXA_SIDE; k++) cylColors.push([0, k % 2, 0]);
-    cylColors.push([1, 1, 1]);
-    cylColors.push([1, 1, 1]);
 
-    tube = new GLGeometry(gl)
-        .attr('vertexPos', cylShape.geometry())
-        .attr('vertexCol', cylColors);
+    let mercuryColors = [];
+    for(let k = 0; k < mercuryShape.vertices.length; k++) {
+        let r = Math.floor(Math.random() * 100)
+        if(r < 60) {
+            mercuryColors.push([0.8,0.8,0.8]);
+        }
+        else if(r >= 60 && r < 85) {
+            mercuryColors.push([0.7,0.7,0.7]);
+        }
+        else {
+            mercuryColors.push([0.6,0.6,0.6]);
+        }
+    }
 
-    axes = new Axes({
+    mercury = new GLGeometry(gl)
+        .attr('vertexPos', mercuryShape.geometry(), { size: 3})
+        .attr('vertexCol', mercuryColors, { size: 3 });
+
+    const venusShape = new Sphere({
+        radius: 0.4,
+        subdivisions: 5
+    });
+
+    let venusColors = [];
+    for(let k = 0; k < venusShape.vertices.length; k++) {
+        let r = Math.floor(Math.random() * 100)
+        if(r < 60) {
+            venusColors.push([0.8,0.5,0.2]);
+        }
+        else if(r >= 60 && r < 85) {
+            venusColors.push([0.6,0.4,0.4]);
+        }
+        else {
+            venusColors.push([0.2,0.2,0.2]);
+        }
+    }
+
+    venus = new GLGeometry(gl)
+        .attr('vertexPos', venusShape.geometry(), { size: 3})
+        .attr('vertexCol', venusColors, { size: 3 });
+
+   axes = new Axes({
         glContext: gl,
         positionAttribute: 'vertexPos',
         colorAttribute: 'vertexCol'
     });
+
+    rocket = new Rocket({
+        glContext: gl,
+        positionAttribute: 'vertexPos',
+        colorAttribute: 'vertexCol'
+    });
+
 
     multiColorShader = createShader(
         gl,
